@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"net"
 	"sync"
 )
@@ -36,35 +35,12 @@ func (this *Server) ListenBroadMessage() {
 
 func (this *Server) BroadCastUserOnline(user *User, msg string){
 	sendMsg := "[" + user.Addr + "]" + user.Name + ":" + msg
-	
 	this.broadMessage <- sendMsg
 }
 
 func (this *Server) Handler(conn net.Conn) {
 	// fmt.Println("链接已建立")
-	user := newUser(conn)
-	this.mapLock.Lock()	
-	this.mapUsers[user.Name] = user
-	this.mapLock.Unlock()
-
-	this.BroadCastUserOnline(user,"已上线")
-
-	go func(){
-		buf := make([]byte,4096)
-		for{
-			n, err := conn.Read(buf)
-			if n == 0{
-				this.BroadCastUserOnline(user,"已下线")
-				return
-			}
-			if err != nil && err != io.EOF{
-				fmt.Println("出错",err)
-			}
-			msg := string(buf[:n-1])
-			this.BroadCastUserOnline(user,msg)	
-
-		}
-	}()
+	newUser(conn,this)
 }
 
 func (this *Server) Start() {
